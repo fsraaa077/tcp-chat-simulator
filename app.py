@@ -22,36 +22,74 @@ st.set_page_config(
 )
 
 # ==============================================================================
-# CSS BERSIH, FORMAL, DAN PROFESIONAL (TANPA AKSEN AI)
+# CSS BERSIH, RAPI, DAN PROPORSIONAL
 # ==============================================================================
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
     
     html, body, [class*="css"] {
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
 
-    /* Header Formal */
+    /* Pastikan padding atas cukup agar tidak terpotong bar Streamlit */
+    .block-container {
+        padding-top: 3.5rem !important;
+        padding-bottom: 2rem !important;
+        max-width: 96% !important;
+    }
+
+    /* Header Utama */
     .app-header {
         background: #0f172a;
         color: #f8fafc;
-        padding: 20px 24px;
+        padding: 18px 22px;
         border-radius: 8px;
-        margin-bottom: 20px;
+        margin-bottom: 18px;
         border: 1px solid #1e293b;
     }
     .app-header h1 {
         margin: 0;
-        font-size: 21px;
+        font-size: 20px;
         font-weight: 700;
         color: #ffffff;
         letter-spacing: -0.2px;
     }
     .app-header p {
-        margin: 6px 0 0 0;
+        margin: 4px 0 0 0;
         font-size: 13px;
         color: #94a3b8;
+    }
+
+    /* Kartu Metrik (Tidak terpotong ...) */
+    .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 18px;
+    }
+    .stat-card {
+        background: var(--secondary-background-color, #ffffff);
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        border-radius: 8px;
+        padding: 12px 14px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    }
+    .stat-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+    }
+    .stat-value {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text-color, #0f172a);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     /* Status Label */
@@ -82,7 +120,7 @@ st.markdown("""
         border: 1px solid rgba(148, 163, 184, 0.25);
         border-radius: 8px;
         padding: 14px 16px;
-        margin-bottom: 14px;
+        margin-bottom: 12px;
     }
     .client-header {
         display: flex;
@@ -153,14 +191,14 @@ st.markdown("""
         background-color: #090d16;
         color: #38bdf8;
         font-family: 'JetBrains Mono', monospace;
-        font-size: 12px;
-        padding: 14px;
+        font-size: 11.5px;
+        padding: 12px;
         border-radius: 6px;
         border: 1px solid #1e293b;
-        height: 340px;
+        height: 330px;
         overflow-y: auto;
         white-space: pre-wrap;
-        line-height: 1.6;
+        line-height: 1.5;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -242,11 +280,10 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-tab_chat, tab_monitor, tab_test, tab_guide = st.tabs([
-    "Multi-Client Chat Arena",
-    "Server Monitor & Connection Pool",
-    "Pengujian Skenario",
-    "Panduan Terminal CMD"
+# HANYA 2 TAB UTAMA (PENGUJIAN SKENARIO & PANDUAN CMD TELAH DIHAPUS)
+tab_chat, tab_monitor = st.tabs([
+    "Obrolan Multi-Client",
+    "Monitoring Server & Connection Pool"
 ])
 
 # ==============================================================================
@@ -284,7 +321,7 @@ def send_message(cid, text):
         st.toast(f"Klien {cid} tidak terhubung.")
 
 # ==============================================================================
-# TAB 1: MULTI-CLIENT CHAT ARENA
+# TAB 1: OBROLAN MULTI-CLIENT
 # ==============================================================================
 with tab_chat:
     st.caption("Menjalankan 3 instans klien socket TCP secara simultan. Setiap klien memiliki alamat port unik dari sistem operasi.")
@@ -406,33 +443,45 @@ with tab_chat:
     render_chat_arena()
 
 # ==============================================================================
-# TAB 2: SERVER MONITOR & CONNECTION POOL
+# TAB 2: MONITORING SERVER & CONNECTION POOL
 # ==============================================================================
 with tab_monitor:
-    st.subheader("Monitoring Socket Server & Connection Pool")
-
     @st.fragment(run_every="1s")
     def render_server_monitor():
         pool = get_active_connection_pool()
         logs = get_server_logs()
         online = is_server_running()
 
-        m1, m2, m3, m4 = st.columns(4)
-        with m1:
-            st.metric("Status Server", "ONLINE (TCP)" if online else "OFFLINE")
-        with m2:
-            st.metric("Klien Terhubung", f"{len(pool)} Klien")
-        with m3:
-            st.metric("Binding Address", f"{st.session_state.server_host}:{st.session_state.server_port}")
-        with m4:
-            st.metric("Konkurensi", "Multithreading")
+        # KARTU METRIK RAPI DAN RESPONSIF (TIDAK AKAN TERPOTONG ...)
+        status_text = "ONLINE (TCP)" if online else "OFFLINE"
+        status_color = "#059669" if online else "#dc2626"
+        
+        st.markdown(f"""
+        <div class="stat-grid">
+            <div class="stat-card">
+                <div class="stat-label">Status Server</div>
+                <div class="stat-value" style="color: {status_color};">{status_text}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Klien Terhubung</div>
+                <div class="stat-value">{len(pool)} Klien</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Binding Address</div>
+                <div class="stat-value" style="font-family: 'JetBrains Mono', monospace; font-size: 14.5px;">{st.session_state.server_host}:{st.session_state.server_port}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Konkurensi</div>
+                <div class="stat-value">Multithreading</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
-        st.markdown("---")
         col_pool, col_log = st.columns([1, 1.25])
 
         with col_pool:
             st.markdown("##### Connection Pool Aktif")
-            st.caption("Struktur data dictionary yang menyimpan daftar socket klien yang sedang terhubung:")
+            st.caption("Struktur data dictionary yang menyimpan daftar socket klien aktif:")
 
             if not pool:
                 st.info("Saat ini belum ada klien yang terhubung ke server.")
@@ -458,146 +507,6 @@ with tab_monitor:
             st.markdown(f'<div class="terminal-box">{safe_log}</div>', unsafe_allow_html=True)
 
     render_server_monitor()
-
-# ==============================================================================
-# TAB 3: PENGUJIAN SKENARIO
-# ==============================================================================
-with tab_test:
-    st.subheader("Verifikasi Skenario Pengujian Praktikum")
-    st.caption("Validasi teknis untuk 3 skenario pengujian socket TCP.")
-
-    col_t1, col_t2 = st.columns([1.2, 1])
-
-    with col_t1:
-        st.markdown("##### Skenario 1: Inisialisasi & Multi-Client")
-        st.markdown("""
-        - **Kriteria:** Server menerima minimal 3 klien secara simultan tanpa blocking.
-        - **Log Server:** `[CONNECTED] Klien terhubung dari IP_KLIEN:PORT_KLIEN` dengan nomor port unik.
-        """)
-
-        st.markdown("##### Skenario 2: Uji Broadcast Pesan")
-        st.markdown("""
-        - **Kriteria:** Pesan dari satu klien diteruskan ke seluruh klien aktif lainnya.
-        - **Format Pesan:** `[IP_KLIEN:PORT_KLIEN]: isi_pesan`
-        """)
-
-        st.markdown("##### Skenario 3: Uji Disconnect & Recovery")
-        st.markdown("""
-        - **Kriteria:** Penanganan pemutusan koneksi tanpa crash.
-        - **Log Server:** `[DISCONNECTED] Klien IP_KLIEN:PORT_KLIEN memutuskan koneksi`
-        - **Notifikasi Sistem:** `*** SISTEM: Klien IP_KLIEN:PORT_KLIEN telah meninggalkan obrolan ***`
-        """)
-
-    with col_t2:
-        st.markdown("##### Eksekusi Pengujian Otomatis")
-        st.caption("Menjalankan rangkaian pengujian socket end-to-end:")
-
-        if st.button("Jalankan Pengujian (Skenario 1, 2, 3)", type="primary", use_container_width=True):
-            test_progress = st.empty()
-            test_results = st.container()
-
-            with test_progress:
-                st.info("Menjalankan pengujian socket TCP...")
-
-            test_host = st.session_state.server_host
-            test_port = st.session_state.server_port
-
-            try:
-                tc1 = ChatClient(host=test_host, port=test_port)
-                tc2 = ChatClient(host=test_host, port=test_port)
-                tc3 = ChatClient(host=test_host, port=test_port)
-
-                ok1, _ = tc1.connect()
-                ok2, _ = tc2.connect()
-                ok3, _ = tc3.connect()
-                time.sleep(0.3)
-
-                ports_distinct = len({tc1.my_port, tc2.my_port, tc3.my_port}) == 3
-
-                tc1.send("Pesan Uji Broadcast")
-                time.sleep(0.4)
-                expected_bcast = f"[{tc1.identity}]: Pesan Uji Broadcast"
-                m2 = [m['raw'] if isinstance(m, dict) else m for m in tc2.get_messages()]
-                m3 = [m['raw'] if isinstance(m, dict) else m for m in tc3.get_messages()]
-                bcast_success = expected_bcast in m2 and expected_bcast in m3
-
-                tc2_id = tc2.identity
-                tc2.disconnect()
-                time.sleep(0.4)
-                expected_disc = f"*** SISTEM: Klien {tc2_id} telah meninggalkan obrolan ***"
-                c1_msgs = [m['raw'] if isinstance(m, dict) else m for m in tc1.get_messages()]
-                c3_msgs = [m['raw'] if isinstance(m, dict) else m for m in tc3.get_messages()]
-                disc_c1 = expected_disc in c1_msgs
-                disc_c3 = expected_disc in c3_msgs
-
-                tc3.send("Klien 3 masih aktif")
-                time.sleep(0.3)
-                c1_msgs_after = [m['raw'] if isinstance(m, dict) else m for m in tc1.get_messages()]
-                recovery_success = f"[{tc3.identity}]: Klien 3 masih aktif" in c1_msgs_after
-
-                tc1.disconnect()
-                tc3.disconnect()
-
-                test_progress.empty()
-
-                with test_results:
-                    st.success("Rangkaian pengujian selesai dieksekusi.")
-                    st.markdown(f"""
-                    - **Pengujian 1 (Multi-Client):** {'LULUS (3 Klien terhubung, port unik)' if (ok1 and ok2 and ok3 and ports_distinct) else 'GAGAL'}
-                    - **Pengujian 2 (Broadcast):** {'LULUS (Format [IP:PORT]: pesan presisi)' if bcast_success else 'GAGAL'}
-                    - **Pengujian 3 (Graceful Disconnect):** {'LULUS (Notifikasi sistem & recovery berhasil)' if (disc_c1 and disc_c3 and recovery_success) else 'GAGAL'}
-                    """)
-            except Exception as e:
-                test_progress.empty()
-                st.error(f"Terjadi kesalahan saat pengujian: {e}")
-
-# ==============================================================================
-# TAB 4: PANDUAN RUNNING TERMINAL CMD
-# ==============================================================================
-with tab_guide:
-    st.subheader("Panduan Eksekusi Terminal CMD")
-    st.caption("Menjalankan server dan klien murni menggunakan konsol CMD / PowerShell:")
-
-    c_g1, c_g2 = st.columns(2)
-
-    with c_g1:
-        st.markdown("##### 1. Menjalankan Server TCP di CMD")
-        st.code("""# Jendela Terminal 1
-python server.py 8080
-""", language="bash")
-        st.caption("Server melakukan bind ke 127.0.0.1:8080 dan mendengarkan koneksi masuk.")
-
-        st.markdown("##### 2. Menjalankan Klien di 3 Terminal Terpisah")
-        st.code("""# Jendela Terminal 2 (Klien 1)
-python client.py 8080
-
-# Jendela Terminal 3 (Klien 2)
-python client.py 8080
-
-# Jendela Terminal 4 (Klien 3)
-python client.py 8080
-""", language="bash")
-        st.caption("Setiap klien mendapatkan nomor port unik dan dapat berkirim pesan secara real-time.")
-
-    with c_g2:
-        st.markdown("##### 3. Menjalankan Antarmuka Web")
-        st.code("""# Terminal CMD
-python run.py
-# atau
-streamlit run app.py
-""", language="bash")
-
-        st.markdown("##### Struktur Berkas Proyek")
-        st.code("""proyek/
-├── server.py           # Socket Server TCP low-level
-├── client.py           # Klien Socket TCP CLI
-├── tcp_client.py       # Modul klien socket OOP
-├── server_manager.py   # Pengelola instance server & log
-├── app.py              # Antarmuka Web Streamlit
-├── run.py              # Script peluncur
-├── test_system.py      # Script otomatisasi pengujian
-└── README.md           # Dokumentasi teknis
-""", language="text")
 
 # ==============================================================================
 # FOOTER
