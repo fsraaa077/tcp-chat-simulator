@@ -35,10 +35,20 @@ def start_global_server(host='127.0.0.1', port=8080):
     global _server_instance
     with _server_lock:
         if _server_instance is None or not _server_instance.is_running:
-            _server_instance = ChatServer(host=host, port=port, log_callback=add_server_log)
-            _server_instance.start(block=False)
-            return True, f"Server berhasil dijalankan di {host}:{port}"
-        return False, f"Server sudah berjalan di {_server_instance.host}:{_server_instance.port}"
+            try:
+                _server_instance = ChatServer(host=host, port=port, log_callback=add_server_log)
+                _server_instance.start(block=False)
+                return True, _server_instance.port
+            except Exception as e:
+                return False, str(e)
+        return True, _server_instance.port
+
+def get_server_port():
+    """Mengambil nomor port aktif dari server global."""
+    with _server_lock:
+        if _server_instance and _server_instance.is_running:
+            return _server_instance.port
+        return 8080
 
 def stop_global_server():
     """Menghentikan server global."""

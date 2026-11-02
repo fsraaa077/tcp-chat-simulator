@@ -8,7 +8,8 @@ from server_manager import (
     is_server_running,
     get_active_connection_pool,
     get_server_logs,
-    clear_server_logs
+    clear_server_logs,
+    get_server_port
 )
 from tcp_client import ChatClient
 
@@ -216,8 +217,15 @@ if "clients" not in st.session_state:
 if "client_history" not in st.session_state:
     st.session_state.client_history = {1: [], 2: [], 3: []}
 
-if not is_server_running():
-    start_global_server(st.session_state.server_host, st.session_state.server_port)
+if is_server_running():
+    st.session_state.server_port = get_server_port()
+else:
+    try:
+        ok, res = start_global_server(st.session_state.server_host, st.session_state.server_port)
+        if ok and isinstance(res, int):
+            st.session_state.server_port = res
+    except Exception:
+        pass
 
 # ==============================================================================
 # SIDEBAR KONTROL SERVER
@@ -241,9 +249,9 @@ with st.sidebar:
     c_s1, c_s2 = st.columns(2)
     with c_s1:
         if st.button("Mulai Server", use_container_width=True, disabled=server_online):
-            ok, msg = start_global_server(st.session_state.server_host, st.session_state.server_port)
-            if ok:
-                st.success(msg)
+            ok, res = start_global_server(st.session_state.server_host, st.session_state.server_port)
+            if ok and isinstance(res, int):
+                st.session_state.server_port = res
             st.rerun()
 
     with c_s2:
@@ -293,7 +301,8 @@ def connect_client(cid):
     if not is_server_running():
         st.toast("Server belum aktif. Silakan mulai server di sidebar.")
         return
-    client = ChatClient(host=st.session_state.server_host, port=st.session_state.server_port)
+    current_port = get_server_port()
+    client = ChatClient(host=st.session_state.server_host, port=current_port)
     ok, msg = client.connect()
     if ok:
         st.session_state.clients[cid] = client

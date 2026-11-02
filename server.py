@@ -57,26 +57,53 @@ class ChatServer:
         if self.is_running:
             return
 
-        try:
-            self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.server_socket.bind((self.host, self.port))
-            self.server_socket.listen(10)
-            self.is_running = True
-            
-            # Log inisialisasi seperti pada simulator dosen
-            self.log("INFO", f"Socket Server diinisialisasi pada {self.host}:{self.port}")
-            self.log("INFO", "Listening TCP Connections ... Max backlog queue: 10")
+        candidate_ports = [self.port, 8081, 8888, 9000, 9999, 0] if self.port == 8080 else [self.port, 0]
+        last_error = None
 
-            if block:
-                self._accept_loop()
-            else:
-                self.accept_thread = threading.Thread(target=self._accept_loop, daemon=True)
-                self.accept_thread.start()
-        except Exception as e:
-            self.log("ERROR", f"Gagal memulai server di {self.host}:{self.port}: {e}")
-            self.stop()
-            raise e
+        for candidate in candidate_ports:
+            try:
+                self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                if hasattr(socket, 'SO_REUSEPORT'):
+                    try:
+                        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+                    except Exception:
+                        pass
+                
+                self.server_socket.bind((self.host, candidate))
+                self.server_socket.listen(10)
+                
+                # Ambil port yang berhasil di-bind (berguna jika fallback ke port lain)
+                self.port = self.server_socket.getsockname()[1]
+                self.is_running = True
+                
+                self.log("INFO", f"Socket Server diinisialisasi pada {self.host}:{self.port}")
+                self.log("INFO", "Listening TCP Connections ... Max backlog queue: 10")
+
+                if block:
+                    self._accept_loop()
+                else:
+                    self.accept_thread = threading.Thread(target=self._accept_loop, daemon=True)
+                    self.accept_thread.start()
+                return
+            except OSError as e:
+                last_error = e
+                if self.server_socket:
+                    try:
+                        self.server_socket.close()
+                    except Exception:
+                        pass
+                    self.server_socket = None
+                continue
+            except Exception as e:
+                last_error = e
+                self.stop()
+                break
+
+        self.log("ERROR", f"Gagal memulai server di {self.host}: {last_error}")
+        self.stop()
+        if block and last_error:
+            raise last_error
 
     def _accept_loop(self):
         """Loop menerima koneksi baru dari klien (non-blocking ke klien lain)."""
